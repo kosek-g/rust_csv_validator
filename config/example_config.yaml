@@ -1,0 +1,177 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# csv_validator — example validation configuration
+#
+# Run with:
+#   csv_validator \
+#     --container  raw-data \
+#     --config     config/example_config.yaml \
+#     --account    mystorageaccount
+#
+# Required environment variables:
+#   AZURE_STORAGE_KEY   — Azure Storage Account access key
+#   SMTP_USERNAME       — SMTP login username
+#   SMTP_PASSWORD       — SMTP login password
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ---------------------------------------------------------------------------
+# Storage (optional — can be overridden via --account or AZURE_STORAGE_ACCOUNT)
+# ---------------------------------------------------------------------------
+storage:
+  account: "mystorageaccount"   # Set AZURE_STORAGE_ACCOUNT env var instead
+
+
+# ---------------------------------------------------------------------------
+# Files
+#
+# Each entry defines a folder inside the container to scan.
+#   path          — folder path relative to the container root
+#   file_pattern  — glob applied to file names (default: *.csv)
+# ---------------------------------------------------------------------------
+files:
+  - path: "raw/orders"
+    file_pattern: "*.csv"
+
+  - path: "raw/customers"
+    file_pattern: "customers_*.csv"
+
+  - path: "raw/products"
+    # file_pattern defaults to "*.csv" when omitted
+
+
+# ---------------------------------------------------------------------------
+# Validations
+#
+# Each entry maps to files whose path starts with `file_pattern`.
+# Rules are applied to each non-header row in each matching CSV file.
+#
+# Available rule types:
+#   not_null         — value must not be empty or whitespace-only
+#   no_duplicates    — value must be unique within the column
+#   regex            — value must match the regular expression `pattern`
+#                      (optional `message` shown in violation reports)
+#   min_length       — string length must be >= `value`
+#   max_length       — string length must be <= `value`
+#   allowed_values   — value must appear in the `values` list
+#   numeric_range    — parsed as float, must be within [min, max]
+#                      (omit min or max for one-sided bounds)
+# ---------------------------------------------------------------------------
+validations:
+
+  # ── Orders ──────────────────────────────────────────────────────────────
+  - file_pattern: "raw/orders"
+    columns:
+
+      - name: "order_id"
+        rules:
+          - type: not_null
+          - type: no_duplicates
+          - type: regex
+            pattern: "^ORD-[0-9]{6}$"
+            message: "Order ID must follow the format ORD-XXXXXX (e.g. ORD-000123)"
+
+      - name: "customer_id"
+        rules:
+          - type: not_null
+          - type: regex
+            pattern: "^CUST-[0-9]{5}$"
+
+      - name: "email"
+        rules:
+          - type: not_null
+          - type: regex
+            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$"
+            message: "Email address format is invalid"
+
+      - name: "amount"
+        rules:
+          - type: not_null
+          - type: numeric_range
+            min: 0.0
+            max: 999999.99
+
+      - name: "currency"
+        rules:
+          - type: not_null
+          - type: allowed_values
+            values: ["USD", "EUR", "GBP", "PLN"]
+          - type: max_length
+            value: 3
+
+      - name: "status"
+        rules:
+          - type: not_null
+          - type: allowed_values
+            values:
+              - "pending"
+              - "processing"
+              - "shipped"
+              - "delivered"
+              - "cancelled"
+
+  # ── Customers ────────────────────────────────────────────────────────────
+  - file_pattern: "raw/customers"
+    columns:
+
+      - name: "customer_id"
+        rules:
+          - type: not_null
+          - type: no_duplicates
+          - type: regex
+            pattern: "^CUST-[0-9]{5}$"
+
+      - name: "first_name"
+        rules:
+          - type: not_null
+          - type: min_length
+            value: 1
+          - type: max_length
+            value: 100
+
+      - name: "last_name"
+        rules:
+          - type: not_null
+          - type: min_length
+            value: 1
+
+      - name: "email"
+        rules:
+          - type: not_null
+          - type: no_duplicates
+          - type: regex
+            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$"
+
+      - name: "country_code"
+        rules:
+          - type: not_null
+          - type: regex
+            pattern: "^[A-Z]{2}$"
+            message: "Country code must be a 2-letter ISO 3166-1 alpha-2 code (e.g. US, GB)"
+          - type: max_length
+            value: 2
+
+  # ── Products ─────────────────────────────────────────────────────────────
+  - file_pattern: "raw/products"
+    columns:
+
+      - name: "product_id"
+        rules:
+          - type: not_null
+          - type: no_duplicates
+
+      - name: "name"
+        rules:
+          - type: not_null
+          - type: min_length
+            value: 2
+
+      - name: "price"
+        rules:
+          - type: not_null
+          - type: numeric_range
+            min: 0.01
+
+      - name: "category"
+        rules:
+          - type: not_null
+
+

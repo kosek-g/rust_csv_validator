@@ -1,0 +1,36 @@
+storage:
+  account: "test_account"
+
+files:
+  - path: "raw/orders"
+    file_pattern: "*.csv"
+
+validations:
+  - file_pattern: "raw/orders"
+    columns:
+      - name: "order_id"
+        rules:
+          - type: not_null
+          - type: no_duplicates
+          - type: regex
+            pattern: "^ORD-[0-9]{6}$"
+      - name: "email"
+        rules:
+          - type: not_null
+          - type: regex
+            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}$"
+      - name: "amount"
+        rules:
+          - type: not_null
+          - type: numeric_range
+            min: 0.0
+      - name: "currency"
+        rules:
+          - type: not_null
+          - type: allowed_values
+            values: ["USD", "EUR", "GBP", "PLN"]
+      - name: "status"
+        rules:
+          - type: not_null
+          - type: allowed_values
+            values: ["pending", "processing", "shipped", "delivered", "cancelled"]

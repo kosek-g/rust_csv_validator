@@ -1,0 +1,53 @@
+[package]
+name = "csv_validator"
+version = "0.1.0"
+edition = "2021"
+description = "A CLI data quality framework for validating CSV files in Azure Data Lake Storage"
+license = "MIT"
+keywords = ["csv", "data-quality", "azure", "validation", "cli"]
+
+[[bin]]
+name = "csv_validator"
+path = "src/main.rs"
+
+[dependencies]
+# CLI argument parsing with derive macros, env-var support, and colour
+clap = { version = "4", features = ["derive", "env", "color", "string"] }
+
+# Async runtime (full feature set for file I/O + networking)
+tokio = { version = "1", features = ["full"] }
+
+# Cloud object-store abstraction with Azure Blob / ADLS Gen2 backend
+object_store = { version = "0.11", features = ["azure"] }
+
+# Async stream combinators (try_collect, etc.)
+futures = "0.3"
+
+# CSV parsing
+csv = "1"
+
+# Config-file serialisation / deserialisation
+serde       = { version = "1", features = ["derive"] }
+serde_yaml  = "0.9"
+serde_json  = "1"
+
+# Error handling – thiserror for typed library errors, anyhow for the binary
+thiserror = "2"
+anyhow    = "1"
+
+# Regular expression engine
+regex = "1"
+
+# Structured, levelled logging
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Terminal colour output
+colored = "2"
+
+# Glob-pattern matching for file discovery
+globset = "0.4"
+
+[dev-dependencies]
+tempfile   = "3"
+tokio-test = "0.4"

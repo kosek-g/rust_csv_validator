@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# csv_validator — validation config for logs.csv in Azure ADLS Gen2
+#
+# Storage account : genaidemoava
+# Container       : rust
+# File            : logs.csv  (at container root)
+#
+# Run with:
+#   export AZURE_STORAGE_KEY="<your-key>"
+#   csv_validator \
+#     --account   genaidemoava \
+#     --container rust \
+#     --config    config/adls_logs_config.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+storage:
+  account: "genaidemoava"
+
+# logs.csv sits at the root of the container, so path is "" (empty = root).
+files:
+  - path: ""
+    file_pattern: "logs.csv"
+
+  - path: "new"
+
+
+validations:
+  # file_pattern matches exactly the object path returned by ADLS: "logs.csv"
+  - file_pattern: "logs.csv"
+    columns:
+
+      - name: "id"
+        rules:
+          - type: integer
+
+      - name: "timestamp"
+        rules:
+          - type: regex
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+            message: "timestamp must be ISO 8601 format (e.g. 2024-01-01T00:00:01)"
+
+      - name: "log"
+        rules:
+          - type: min_length
+            value: 10
+          - type: max_length
+            value: 10
+
+  - file_pattern: "new"
+    columns:
+
+      - name: "id"
+        rules:
+          - type: no_duplicates
+
+      - name: "timestamp"
+        rules:
+          - type: regex
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+            message: "timestamp must be ISO 8601 format (e.g. 2024-01-01T00:00:01)"
+
+      - name: "log"
+        rules:
+          - type: min_length
+            value: 3
+          - type: allowed_values
+            values: ["xxx"]
+
+      - name: "user"
+        rules:
+          - type: not_null
+

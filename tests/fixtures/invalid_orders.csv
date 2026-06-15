@@ -1,0 +1,6 @@
+order_id,customer_id,email,amount,currency,status
+ORD-000001,CUST-00001,alice@example.com,49.99,USD,pending
+,CUST-00002,bob@example.com,199.00,EUR,shipped
+ORD-000003,CUST-00003,not-an-email,9.50,GBP,delivered
+ORD-000001,CUST-00004,dave@example.com,-5.00,USD,processing
+ORD-000005,CUST-00005,eve@example.com,1500.00,CHF,unknown_status

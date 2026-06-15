@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# csv_validator — validation config for logs.csv
+#
+# Run locally with:
+#   csv_validator \
+#     --local-file /home/gkosek/repos/rust_cli_dq/logs.csv \
+#     --config     config/logs_config.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+# `files` is not used in --local-file mode but must have at least one entry
+# to pass config validation.
+files:
+  - path: "."
+    file_pattern: "logs.csv"
+
+validations:
+  # file_pattern matches the filename passed by --local-file (just "logs.csv").
+  - file_pattern: "logs.csv"
+    columns:
+
+      - name: "id"
+        rules:
+          # Every id must be a whole number (i64).
+          - type: integer
+
+      - name: "timestamp"
+        rules:
+          # Matches ISO 8601 local datetime: YYYY-MM-DDTHH:MM:SS
+          - type: regex
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$'
+            message: "timestamp must be in ISO 8601 format (e.g. 2024-01-01T00:00:01)"
+
+      - name: "log"
+        rules:
+          # Log entry must be exactly 10 characters long.
+          - type: min_length
+            value: 10
+          - type: max_length
+            value: 10

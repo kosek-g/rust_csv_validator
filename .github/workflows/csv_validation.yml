@@ -1,0 +1,108 @@
+name: CSV Data Quality Validation
+
+on:
+  # Run on a schedule – adjust cron to your preferred time zone offset.
+  # This example runs daily at 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * *"
+
+  # Allow ad-hoc runs from the GitHub Actions UI.
+  workflow_dispatch:
+    inputs:
+      container:
+        description: "Azure Storage container name (overrides the repository variable)"
+        required: false
+        type: string
+
+env:
+  # Rust toolchain version.  Pin to a specific stable release for reproducibility.
+  RUST_VERSION: stable
+  # Path to the binary after a release build.
+  BINARY: ./target/release/csv_validator
+
+jobs:
+  validate:
+    name: Validate CSV files
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── Source checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Rust toolchain ───────────────────────────────────────────────────────
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      # ── Dependency cache ─────────────────────────────────────────────────────
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # ── Build ────────────────────────────────────────────────────────────────
+      - name: Build release binary
+        run: cargo build --release --locked
+
+      # ── Unit + integration tests ─────────────────────────────────────────────
+      - name: Run tests
+        run: cargo test --locked
+
+      # ── Lint ─────────────────────────────────────────────────────────────────
+      - name: Clippy lint check
+        run: cargo clippy --locked -- -D warnings
+
+      # ── Config dry-run ───────────────────────────────────────────────────────
+      # Validates the config file syntax before touching Azure.
+      - name: Validate config syntax
+        run: |
+          ${{ env.BINARY }} \
+            --container placeholder \
+            --config config/example_config.yaml \
+            --dry-run
+
+      # ── CSV validation ───────────────────────────────────────────────────────
+      - name: Run CSV validation
+        env:
+          # Azure credentials — stored in GitHub repository secrets.
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
+        run: |
+          CONTAINER="${{ inputs.container || vars.CSV_VALIDATOR_CONTAINER }}"
+          ${{ env.BINARY }} \
+            --container "${CONTAINER}" \
+            --config config/example_config.yaml \
+            --output pretty \
+            --verbose
+
+      # ── Upload JSON report as artifact ───────────────────────────────────────
+      - name: Generate JSON report artifact
+        if: always()          # Run even when validation fails
+        env:
+          AZURE_STORAGE_ACCOUNT: ${{ secrets.AZURE_STORAGE_ACCOUNT }}
+          AZURE_STORAGE_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
+        run: |
+          CONTAINER="${{ inputs.container || vars.CSV_VALIDATOR_CONTAINER }}"
+          ${{ env.BINARY }} \
+            --container "${CONTAINER}" \
+            --config config/example_config.yaml \
+            --output json \
+            --no-alert \
+            > validation_report.json || true
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ github.run_id }}
+          path: validation_report.json
+          retention-days: 30
