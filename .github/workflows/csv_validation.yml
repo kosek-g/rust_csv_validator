@@ -80,7 +80,7 @@ jobs:
           CONTAINER="${{ inputs.container || vars.CSV_VALIDATOR_CONTAINER }}"
           ${{ env.BINARY }} \
             --container "${CONTAINER}" \
-            --config config/example_config.yaml \
+            --config config/adls_logs_config.yaml \
             --output pretty \
             --verbose
 
@@ -94,9 +94,8 @@ jobs:
           CONTAINER="${{ inputs.container || vars.CSV_VALIDATOR_CONTAINER }}"
           ${{ env.BINARY }} \
             --container "${CONTAINER}" \
-            --config config/example_config.yaml \
+            --config config/adls_logs_config.yaml \
             --output json \
-            --no-alert \
             > validation_report.json || true
 
       - name: Upload validation report
