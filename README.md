@@ -1,6 +1,6 @@
 # csv_validator
 
-A production-ready CLI tool for validating CSV files stored in **Azure Data Lake Storage Gen2 (ADLS Gen2)**. Define your data quality rules in a YAML config file and run validation on a schedule via GitHub Actions — or on demand from the command line.
+CLI tool for validating CSV files stored in **Azure Data Lake Storage Gen2 (ADLS Gen2)**. Define your data quality rules in a YAML config file and run validation on a schedule via GitHub Actions — or on demand from the command line.
 
 ## Features
 
