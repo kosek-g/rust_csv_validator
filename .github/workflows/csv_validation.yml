@@ -1,10 +1,8 @@
 name: CSV Data Quality Validation
 
 on:
-  # Run on a schedule – adjust cron to your preferred time zone offset.
-  # This example runs daily at 06:00 UTC.
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 0 1 * *"
 
   # Allow ad-hoc runs from the GitHub Actions UI.
   workflow_dispatch:
